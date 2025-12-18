@@ -1,4 +1,5 @@
 ﻿using ComplexLogger;
+using Il2Cpp;
 using Il2CppInterop;
 using Il2CppInterop.Runtime.Injection; 
 using MelonLoader;
@@ -11,11 +12,11 @@ namespace RuinedMending
 	{
 		internal static ComplexLogger<RuinedMending> Logger = new();
 
-        public override void OnInitializeMelon()
+
+		public override void OnInitializeMelon()
 		{
             Settings.OnLoad();
-        }
-
+		}
 
 		internal static void Log(String str, ComplexLogger.FlaggedLoggingLevel level = FlaggedLoggingLevel.Always)
 		{

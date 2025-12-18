@@ -10,16 +10,13 @@ using HarmonyLib;
 
 namespace RuinedMending
 {
-	//RuinedMending.Log($"1.CanRepair: {__instance.CanRepair()}. 2.HasMaterial: {__instance.RepairHasRequiredMaterial()}. 3.HasTool: {__instance.RepairHasRequiredTool()}. 4.Duration Minutes: {__instance.m_Repairable.GetDurationMinutes()}. 5.WillSucceed: {__instance.m_RepairWillSucceed}. 6.Material Required: {__instance.m_Repairable.GetMaterialRequired(1)}. 7.DisplayName: {__instance.m_Repairable.GetDisplayName()}");
-
-
 	//Lets us grab a copy of an existing button to copy later.
 	[HarmonyPatch(typeof(Panel_Inventory), nameof(Panel_Inventory.Initialize))]
 	internal class RuinedMendingInitialization
 	{
 		private static void Postfix(Panel_Inventory __instance)
 		{
-			RuinedMending.Log("Initializing RM panel");
+			RuinedMending.Log("Patches.RuinedMendingIntialization : Initializing RM panel");
 			RMButtons.InitializeRM(__instance.m_ItemDescriptionPage);
 		}
 	}
@@ -31,17 +28,15 @@ namespace RuinedMending
 		private static void Postfix(ItemDescriptionPage __instance, GearItem gi)
 		{
 			if (__instance != InterfaceManager.GetPanel<Panel_Inventory>()?.m_ItemDescriptionPage) return;
-			
+
 			if (RMUtils.IsValidItem(gi))
 			{
 				RMButtons.SetRestoreItemButtonActive(true);
+				RMUtils.restoreItem = gi;
 
 				if (RMUtils.CanRestore(gi))
 				{
-					RuinedMending.Log($"'{gi.name}' is valid to repair");
-
 					RMButtons.SetRestoreItemButtonErrored(false);
-					RMUtils.restoreItem = gi;
 				} else
 				{
 					RMButtons.SetRestoreItemButtonErrored(true);
@@ -50,6 +45,36 @@ namespace RuinedMending
 			else
 			{
 				RMButtons.SetRestoreItemButtonActive(false);
+			}
+		}
+	}
+
+	//DEBUG
+	[HarmonyPatch(typeof(ConsoleManager), nameof(ConsoleManager.Initialize))]
+	internal class ConsoleManagerPatches_Initialize
+	{
+		private static void Postfix()
+		{
+			uConsole.RegisterCommand("rmdebug", new Action(ConsoleCommands.Console_OnCommand));
+		}
+	}
+
+
+	internal class ConsoleCommands
+	{
+		internal static void Console_OnCommand()
+		{
+			string[] gearList = { "GEAR_DeerSkinPants", "GEAR_SewingKit" };
+
+			foreach (string gearName in gearList)
+			{
+				GearItem gi = GameManager.GetInventoryComponent().GetHighestConditionGearThatMatchesName(gearName);
+
+				if (gi != null)
+				{
+					gi.m_CurrentHP = 0;
+					gi.ForceWornOut();
+				}
 			}
 		}
 	}

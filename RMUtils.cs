@@ -1,32 +1,55 @@
 ﻿using Il2Cpp;
 using Il2CppSystem;
+using Il2CppSystem.Collections;
 using Il2CppSystem.Collections.Generic;
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Delegate = Il2CppSystem.Delegate;
 
 namespace RuinedMending
 {
 	internal class RMUtils
 	{
-		//Item to restore placeholder
+		//Reference for the most recently selected item
 		internal static GearItem restoreItem;
 
-		public static string LookupRestoreMaterial(GearItem gi)
+		//Returns an array of GearItems required to restore an item
+		public static GearItem[] LookupRequiredRestoreGear(GearItem gi)
 		{
-			//TODO Add logic to decide which material to repair clothes with
-			return "GEAR_Cloth";
+			return gi.GetComponent<Repairable>().m_RequiredGear;
 		}
 
-		public static int LookupRestoreAmount(GearItem gi)
+		//Returns an array of ints for how many GearItems are required to restore an item
+		public static int[] LookupRequiredRestoreGearAmounts(GearItem gi)
 		{
-			//TODO Add logic to decide which material to repair clothes with
-			return 2;
+			int[] requiredAmount = gi.GetComponent<Repairable>().m_RequiredGearUnits;
+
+			for (int i = 0; i < requiredAmount.Length; i++)
+			{
+				//TODO Add setting to modify how many materials are required.
+				requiredAmount[i] *= Settings.options.restoreMaterialMultiplier;
+			}
+
+			return requiredAmount;
 		}
 
+		//Returns how long the restore should take
+		public static float LookupRestoreDuration(GearItem gi)
+		{
+			return gi.m_Repairable.m_DurationMinutes * GameManager.GetSkillClothingRepair().GetRepairTimeScale() * (IsUsingFishingTackle() ? 2f : 1f) * Settings.options.restoreDurationMultiplier;
+		}
+
+		//Returns failure chance for repairing a GearItem.
+		public static float LookupRestoreFailChance(GearItem gi)
+		{
+			return GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20f - Settings.options.restoreFailureDebuff;
+		}
+
+		//Checks if the GearItem is a valid restore target
 		public static bool IsValidItem(GearItem gi)
 		{
 			if (gi == null) return false; //GearItem is null
@@ -38,20 +61,88 @@ namespace RuinedMending
 			return true; //GearItem is valid to restore
 		}
 
-		internal static bool CanRestore(GearItem gi)
+		//Checks if player can restore the GearItem. Warns the player if they can't and "silent" is false.
+		internal static bool CanRestore(GearItem gi, bool silent = true)
 		{
 			if (gi == null) return false; //GearItem is null
 
-			int numRestoreMaterials = GameManager.GetInventoryComponent().NumGearInInventory(LookupRestoreMaterial(gi));
+			//Check if the player has all the required restore materials in their inventory.
+			GearItem[] requiredMaterials = LookupRequiredRestoreGear(gi);
+			int[] numRequiredMaterials = LookupRequiredRestoreGearAmounts(gi);
+			for (int i = 0; i < requiredMaterials.Length; i++) 
+			{
+				if (GameManager.GetInventoryComponent().NumGearInInventory(requiredMaterials[i].name, true) < numRequiredMaterials[i])
+				{
+					//Enable HintLabel telling player what materials they need to restore the GearItem
+					if (!silent) RMButtons.UpdateHintLabel(GetTextFriendlyMissingMaterialsString(gi), true);
 
-			RuinedMending.Log($"Number of restore materials: {numRestoreMaterials}. Sewing Kits: {GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit")}. Tackles: {GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HookAndLine")}.");
+					return false;
+				}
+			}
 
-			if (numRestoreMaterials < LookupRestoreAmount(gi)) return false; //TODO Add warning message to player here for lack of materials
+			if (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit", true) == 0 && GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HookAndLine", true) == 0)
+			{
+				//Enable HintLabel telling player what tools they need to restore the GearItem
+				if (!silent) RMButtons.UpdateHintLabel("You need a Sewing Kit or a Fishing Tackle to repair this!", true);
 
-			if (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit") == 0 && GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HookAndLine") == 0) return false; //TODO Add warning to player here for lack of tools
-
+				return false;
+			}
 
 			return true;
+		}
+
+		//Checks if a player is using a Fishing Tackle to restore an item
+		internal static bool IsUsingFishingTackle()
+		{
+			return (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit", true) == 0);
+		}
+
+		//Returns a nicely formatted string of required repair materials
+		internal static string GetTextFriendlyMissingMaterialsString(GearItem gi)
+		{
+			string s_requiredMaterials = "";
+
+			GearItem[] requiredMaterials = LookupRequiredRestoreGear(gi);
+			int[] numRequiredMaterials = LookupRequiredRestoreGearAmounts(gi);
+
+			if (requiredMaterials.Length == 0)
+			{
+				//What?
+				RuinedMending.Log("GetTextFriendlyMissingMaterialsString() : Required restore materials is empty.", ComplexLogger.FlaggedLoggingLevel.Error);
+			}
+			else if (requiredMaterials.Length == 1)
+			{
+				s_requiredMaterials = $"{gi.DisplayName} requires {numRequiredMaterials[0]} {requiredMaterials[0].DisplayName} to repair!";
+			} 
+			else if (requiredMaterials.Length == 2)
+			{
+				s_requiredMaterials = $"{gi.DisplayName} requires {numRequiredMaterials[0]} {requiredMaterials[0].DisplayName} and {numRequiredMaterials[1]} {requiredMaterials[1].DisplayName} to repair!";
+			}
+			else
+			{
+				s_requiredMaterials = $"{gi.DisplayName} requires ";
+
+				for (int i = 0; i < requiredMaterials.Length - 1; i++)
+				{
+					s_requiredMaterials += $"{numRequiredMaterials[i]} {requiredMaterials[i].DisplayName},";
+				}
+
+				s_requiredMaterials += $", and {numRequiredMaterials[1]} {requiredMaterials[1].DisplayName} to repair!";
+			}
+
+			return s_requiredMaterials;
+		}
+
+		internal class LabelCoroutine : MonoBehaviour
+		{
+			internal System.Collections.IEnumerator DisplayHintLabel(float waitTime)
+			{
+				//TODO Add nice fade out for HintLabel
+
+				yield return new WaitForSeconds(waitTime);
+
+				RMButtons.UpdateHintLabel("",false);
+			}
 		}
 	}
 }
