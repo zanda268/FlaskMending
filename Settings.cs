@@ -7,10 +7,6 @@ namespace RuinedMending
     internal class RuinedMendingSettings : JsonModSettings
     {        
         [Section("General")]
-     
-        [Name("Enabled")]
-        [Description("Enable/disable complete mod functionality")]
-        public bool modEnabled = true;
 
 		[Name("Restore duration multipler")]
 		[Description("Changes how long it takes to restore a ruined item based on the normal mending time. Default is 2x normal mend time.")]

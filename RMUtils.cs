@@ -43,10 +43,11 @@ namespace RuinedMending
 			return gi.m_Repairable.m_DurationMinutes * GameManager.GetSkillClothingRepair().GetRepairTimeScale() * (IsUsingFishingTackle() ? 2f : 1f) * Settings.options.restoreDurationMultiplier;
 		}
 
-		//Returns failure chance for repairing a GearItem.
-		public static float LookupRestoreFailChance(GearItem gi)
+		//Rolls restore chance. Takes the base chance, adds the 20% boost, and then subtracts the debuff from the settings. Generates a random number based on that and clamps it between 0.2 and 1.0.
+		public static float RollRestoreChance(GearItem gi)
 		{
-			return GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20f - Settings.options.restoreFailureDebuff;
+			float chanceToSucceed = (GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20 - Settings.options.restoreFailureDebuff) / 100;
+			return System.Math.Clamp(UnityEngine.Random.RandomRange(chanceToSucceed, 1 + chanceToSucceed), 0.2f, 1f);
 		}
 
 		//Checks if the GearItem is a valid restore target

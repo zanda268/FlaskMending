@@ -58,10 +58,10 @@ namespace RuinedMending
 			GameAudioManager.PlaySound(GameAudioManager.Instance.m_Confirm, GameManager.m_PlayerObject);
 
 			float restoreTime = RMUtils.LookupRestoreDuration(RMUtils.restoreItem);
-			float failureChance = RMUtils.LookupRestoreFailChance(RMUtils.restoreItem);
+			float failureThreshold = RMUtils.RollRestoreChance(RMUtils.restoreItem);
 
 			//TODO Add localization here
-			InterfaceManager.GetPanel<Panel_GenericProgressBar>().Launch("Restoring", 5f, restoreTime, failureChance,
+			InterfaceManager.GetPanel<Panel_GenericProgressBar>().Launch("Restoring", 5f, restoreTime, failureThreshold,
 							"Play_CraftingCloth", null, false, true, new System.Action<bool, bool, float>(OnRestoreItemFinished));
 		}
 
@@ -89,6 +89,11 @@ namespace RuinedMending
 			{
 				RMUtils.restoreItem.SetNormalizedHP((Settings.options.restoredItemCondition / 100) - 0.01f, true);
 				RMUtils.restoreItem.ForceNotWornOut();
+			}
+			else
+			{
+				GameAudioManager.PlaySound(GameAudioManager.Instance.m_ErrorAudio, GameManager.m_PlayerObject);
+				UpdateHintLabel($"Restoring Failed. {(GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20 - Settings.options.restoreFailureDebuff).ToString("0.##")}% chance of success.");
 			}
 		}
 
