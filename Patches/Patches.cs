@@ -16,8 +16,8 @@ namespace RuinedMending
 	{
 		private static void Postfix(Panel_Inventory __instance)
 		{
-			RuinedMending.Log("Patches.RuinedMendingIntialization : Initializing RM panel");
 			RMButtons.InitializeRM(__instance.m_ItemDescriptionPage);
+			RuinedMending.Log("Ruined Mending online.");
 		}
 	}
 
