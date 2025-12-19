@@ -8,16 +8,16 @@ using Il2CppNewtonsoft.Json.Linq;
 using HarmonyLib;
 
 
-namespace RuinedMending
+namespace FlaskMending
 {
 	//Lets us grab a copy of an existing button to copy later.
 	[HarmonyPatch(typeof(Panel_Inventory), nameof(Panel_Inventory.Initialize))]
-	internal class RuinedMendingInitialization
+	internal class FlaskMendingInitialization
 	{
 		private static void Postfix(Panel_Inventory __instance)
 		{
-			RMButtons.InitializeRM(__instance.m_ItemDescriptionPage);
-			RuinedMending.Log("Ruined Mending online.");
+			FMButtons.InitializeFM(__instance.m_ItemDescriptionPage);
+			FlaskMending.Log("Flask Mending online.");
 		}
 	}
 
@@ -29,22 +29,22 @@ namespace RuinedMending
 		{
 			if (__instance != InterfaceManager.GetPanel<Panel_Inventory>()?.m_ItemDescriptionPage) return;
 
-			if (RMUtils.IsValidItem(gi))
+			if (FMUtils.IsValidItem(gi))
 			{
-				RMButtons.SetRestoreItemButtonActive(true);
-				RMUtils.restoreItem = gi;
+				FMButtons.SetRestoreItemButtonActive(true);
+				FMUtils.restoreItem = gi;
 
-				if (RMUtils.CanRestore(gi))
+				if (FMUtils.CanRestore(gi))
 				{
-					RMButtons.SetRestoreItemButtonErrored(false);
+					FMButtons.SetRestoreItemButtonErrored(false);
 				} else
 				{
-					RMButtons.SetRestoreItemButtonErrored(true);
+					FMButtons.SetRestoreItemButtonErrored(true);
 				}
 			}
 			else
 			{
-				RMButtons.SetRestoreItemButtonActive(false);
+				FMButtons.SetRestoreItemButtonActive(false);
 			}
 		}
 	}

@@ -6,11 +6,11 @@ using MelonLoader;
 using System.Collections;
 using UnityEngine;
 
-namespace RuinedMending
+namespace FlaskMending
 {
-	public class RuinedMending : MelonMod
+	public class FlaskMending : MelonMod
 	{
-		internal static ComplexLogger<RuinedMending> Logger = new();
+		internal static ComplexLogger<FlaskMending> Logger = new();
 
 
 		public override void OnInitializeMelon()

@@ -1,5 +1,5 @@
 using MelonLoader;
-using RuinedMending;
+using FlaskMending;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -7,15 +7,15 @@ using System.Runtime.InteropServices;
 
 //ModName, ModVersion, ModAuthor, and ModNamespace.ModClassInheritingFromMelonMod all need changed.
 
-[assembly: AssemblyTitle("RuinedMending")]
+[assembly: AssemblyTitle("FlaskMending")]
 [assembly: AssemblyCopyright("Zanda268")]
 
 //Version numbers in C# are a set of 1 to 4 positive integers separated by periods.
 //Mods typically use 3 numbers. For example: 1.2.1
 //The mod version need specified in three places.
-[assembly: AssemblyVersion("1.1.0")]
-[assembly: AssemblyFileVersion("1.1.0")]
-[assembly: MelonInfo(typeof(RuinedMending.RuinedMending), "RuinedMending", "1.1.0", "Zanda268", null)]
+[assembly: AssemblyVersion("0.9.9")]
+[assembly: AssemblyFileVersion("0.9.9")]
+[assembly: MelonInfo(typeof(FlaskMending.FlaskMending), "FlaskMending", "0.9.9", "Zanda268", null)]
 
 //This tells MelonLoader that the mod is only for The Long Dark.
 [assembly: MelonGame("Hinterland", "TheLongDark")]

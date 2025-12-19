@@ -2,6 +2,7 @@
 using Il2CppSystem;
 using Il2CppSystem.Collections;
 using Il2CppSystem.Collections.Generic;
+using MelonLoader;
 using System;
 using System.Collections;
 using System.Linq;
@@ -10,9 +11,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Delegate = Il2CppSystem.Delegate;
 
-namespace RuinedMending
+namespace FlaskMending
 {
-	internal class RMUtils
+	internal class FMUtils
 	{
 		//Reference for the most recently selected item
 		internal static GearItem restoreItem;
@@ -20,13 +21,13 @@ namespace RuinedMending
 		//Returns an array of GearItems required to restore an item
 		public static GearItem[] LookupRequiredRestoreGear(GearItem gi)
 		{
-			return gi.GetComponent<Repairable>().m_RequiredGear;
+			return new GearItem[] { GearItem.LoadGearItemPrefab("GEAR_ScrapMetal") };
 		}
 
 		//Returns an array of ints for how many GearItems are required to restore an item
 		public static int[] LookupRequiredRestoreGearAmounts(GearItem gi)
 		{
-			int[] requiredAmount = gi.GetComponent<Repairable>().m_RequiredGearUnits;
+			int[] requiredAmount = { 2 };
 
 			for (int i = 0; i < requiredAmount.Length; i++)
 			{
@@ -40,13 +41,13 @@ namespace RuinedMending
 		//Returns how long the restore should take
 		public static float LookupRestoreDuration(GearItem gi)
 		{
-			return gi.m_Repairable.m_DurationMinutes * GameManager.GetSkillClothingRepair().GetRepairTimeScale() * (IsUsingFishingTackle() ? 2f : 1f) * Settings.options.restoreDurationMultiplier;
+			return 60 * (IsUsingSimpleTools() ? 2f : 1f) * Settings.options.restoreDurationMultiplier; //TODO get repair skill modifier here?
 		}
 
 		//Rolls restore chance. Takes the base chance, adds the 20% boost, and then subtracts the debuff from the settings. Generates a random number based on that and clamps it between 0.2 and 1.0.
 		public static float RollRestoreChance(GearItem gi)
 		{
-			float chanceToSucceed = (GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20 - Settings.options.restoreFailureDebuff) / 100;
+			float chanceToSucceed = (50 + 20 - Settings.options.restoreFailureDebuff + (IsUsingSimpleTools() ? 0 : 20)) / 100;
 			return System.Math.Clamp(UnityEngine.Random.RandomRange(chanceToSucceed, 1 + chanceToSucceed), 0.2f, 1f);
 		}
 
@@ -55,11 +56,11 @@ namespace RuinedMending
 		{
 			if (gi == null) return false; //GearItem is null
 
-			if (!gi.m_ClothingItem) return false; //GearItem is not a clothing item
+			if (!gi.name.Contains("InsulatedFlask_")) return false; //GearItem not a flask.
 
-			if (!gi.m_WornOut || gi.m_CurrentHP != 0) return false; //GearItem isn't worn out and it's HP isn't 0
+			if (gi.CurrentHP > 495) return false; //Item is almost full hp.
 
-			return true; //GearItem is valid to restore
+			return true; //GearItem is valid
 		}
 
 		//Checks if player can restore the GearItem. Warns the player if they can't and "silent" is false.
@@ -75,16 +76,16 @@ namespace RuinedMending
 				if (GameManager.GetInventoryComponent().NumGearInInventory(requiredMaterials[i].name, true) < numRequiredMaterials[i])
 				{
 					//Enable HintLabel telling player what materials they need to restore the GearItem
-					if (!silent) RMButtons.UpdateHintLabel(GetTextFriendlyMissingMaterialsString(gi), true);
+					if (!silent) FMButtons.UpdateHintLabel(GetTextFriendlyMissingMaterialsString(gi), true);
 
 					return false;
 				}
 			}
 
-			if (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit", true) == 0 && GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HookAndLine", true) == 0)
+			if (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SimpleTools", true) == 0 && GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HighQualityTools", true) == 0)
 			{
 				//Enable HintLabel telling player what tools they need to restore the GearItem
-				if (!silent) RMButtons.UpdateHintLabel("You need a Sewing Kit or a Fishing Tackle to repair this!", true);
+				if (!silent) FMButtons.UpdateHintLabel("You need a Simple or High Quality Tools to repair this!", true);
 
 				return false;
 			}
@@ -93,9 +94,9 @@ namespace RuinedMending
 		}
 
 		//Checks if a player is using a Fishing Tackle to restore an item
-		internal static bool IsUsingFishingTackle()
+		internal static bool IsUsingSimpleTools()
 		{
-			return (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit", true) == 0);
+			return (GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HighQualityTools", true) == 0);
 		}
 
 		//Returns a nicely formatted string of required repair materials
@@ -109,7 +110,7 @@ namespace RuinedMending
 			if (requiredMaterials.Length == 0)
 			{
 				//What?
-				RuinedMending.Log("GetTextFriendlyMissingMaterialsString() : Required restore materials is empty.", ComplexLogger.FlaggedLoggingLevel.Error);
+				FlaskMending.Log("GetTextFriendlyMissingMaterialsString() : Required restore materials is empty.", ComplexLogger.FlaggedLoggingLevel.Error);
 			}
 			else if (requiredMaterials.Length == 1)
 			{
@@ -142,7 +143,7 @@ namespace RuinedMending
 
 				yield return new WaitForSeconds(waitTime);
 
-				RMButtons.UpdateHintLabel("",false);
+				FMButtons.UpdateHintLabel("",false);
 			}
 		}
 	}

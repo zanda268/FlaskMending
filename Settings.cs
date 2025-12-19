@@ -1,32 +1,28 @@
-﻿using UnityEngine;
-using ModSettings;
+﻿using Il2Cpp;
 using MelonLoader;
+using ModSettings;
+using UnityEngine;
 
-namespace RuinedMending
+namespace FlaskMending
 {
-    internal class RuinedMendingSettings : JsonModSettings
+    internal class FlaskMendingSettings : JsonModSettings
     {        
         [Section("General")]
 
 		[Name("Restore duration multipler")]
-		[Description("Changes how long it takes to restore a ruined item based on the normal mending time. Default is 2x normal mend time.")]
-		[Slider(0f, 3f, 16)]
-		public float restoreDurationMultiplier = 2f;
+		[Description("Multiplier changing how long it takes to repair or restore a flask. Default of 1 would take 60 minutes if using High Quality Tools.")]
+		[Slider(0f, 3f, 16, NumberFormat = "{0:0.#}x")]
+		public float restoreDurationMultiplier = 1f;
 
 		[Name("Restore material multipler")]
-		[Description("Changes how many materials it takes to restore a ruined item based on the normal mending amount. Default is 2x normal mending materials.")]
-		[Slider(0, 4, 1)]
-		public int restoreMaterialMultiplier = 2;
+		[Description("Changes how many materials it takes to repair or restore a flask. Default is 2x of scrap metal.")]
+		[Slider(0, 4, 1, NumberFormat = "{0:0}x")]
+		public int restoreMaterialMultiplier = 1;
 
 		[Name("Restore chance debuff")]
-		[Description("Flat debuff to fail restoring a ruined item on top of normal mending failure chance. Default is a 30% debuff. 0% will not increase failure chance at all.")]
+		[Description("Flat debuff to fail repairing or restoring a flask. Default of 0 will give you a 90% chance to repair if using High Quality tools.")]
 		[Slider(0f, 100f, 101)]
-		public float restoreFailureDebuff = 30f;
-
-		[Name("Restored Item Condition")]
-		[Description("Item's condition if the restore succeeds. Default is 10%")]
-		[Slider(1f, 100f, 100)]
-		public float restoredItemCondition = 10f;
+		public float restoreFailureDebuff = 0f;
 
 
 		protected override void OnConfirm()
@@ -37,12 +33,12 @@ namespace RuinedMending
 
     internal static class Settings
     {
-        public static RuinedMendingSettings options;
+        public static FlaskMendingSettings options;
 
         public static void OnLoad()
         {
-            options = new RuinedMendingSettings();
-            options.AddToModSettings("Ruined Mending");
+            options = new FlaskMendingSettings();
+            options.AddToModSettings("Flask Mending");
         }
     }
 }

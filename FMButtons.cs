@@ -7,25 +7,26 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace RuinedMending
+namespace FlaskMending
 {
-	internal class RMButtons
+	internal class FMButtons
 	{
 		//Buttons
-		private static GameObject restoreButton;
+		internal static GameObject restoreButton;
 
 		internal static UILabel hintLabel;
 
 		//Button Text Localization
-		internal static string restoreText = "Restore";
+		internal static string restoreText = "Repair";
 
-		internal static void InitializeRM(ItemDescriptionPage itemDescriptionPage)
+		internal static void InitializeFM(ItemDescriptionPage itemDescriptionPage)
 		{
 			//restoreText = Localization.Get("GAMEPLAY_RM_RestoreButtonLabel"); TODO Add localization
 
 			//Creates a button labeled Restore
 			GameObject equipButton = itemDescriptionPage.m_MouseButtonEquip;
 			restoreButton = UnityEngine.Object.Instantiate<GameObject>(equipButton, equipButton.transform.parent, true);
+			restoreButton.transform.Translate(0f, -0.1f, 0f);
 			Utils.GetComponentInChildren<UILabel>(restoreButton).text = restoreText;
 			SetAction(restoreButton, new System.Action(OnRestoreItem));
 
@@ -49,7 +50,7 @@ namespace RuinedMending
 		//Action called when user clicked Restore button
 		private static void OnRestoreItem()
 		{
-			if (!RMUtils.CanRestore(RMUtils.restoreItem, false))
+			if (!FMUtils.CanRestore(FMUtils.restoreItem, false))
 			{
 				GameAudioManager.PlaySound(GameAudioManager.Instance.m_ErrorAudio, GameManager.m_PlayerObject); //Only way I could get Audio to play. Does GameAudioManager.Play not work anymore?
 				return;
@@ -57,8 +58,8 @@ namespace RuinedMending
 
 			GameAudioManager.PlaySound(GameAudioManager.Instance.m_Confirm, GameManager.m_PlayerObject);
 
-			float restoreTime = RMUtils.LookupRestoreDuration(RMUtils.restoreItem);
-			float failureThreshold = RMUtils.RollRestoreChance(RMUtils.restoreItem);
+			float restoreTime = FMUtils.LookupRestoreDuration(FMUtils.restoreItem);
+			float failureThreshold = FMUtils.RollRestoreChance(FMUtils.restoreItem);
 
 			//TODO Add localization here
 			InterfaceManager.GetPanel<Panel_GenericProgressBar>().Launch("Restoring", 5f, restoreTime, failureThreshold,
@@ -72,13 +73,13 @@ namespace RuinedMending
 			if (playerCancel) return;
 
 			//Get the tool used and degrade it
-			string toolUsed = GameManager.GetInventoryComponent().NumGearInInventory("GEAR_SewingKit", true) > 0 ? "GEAR_SewingKit" : "GEAR_HookAndLine";
+			string toolUsed = GameManager.GetInventoryComponent().NumGearInInventory("GEAR_HighQualityTools", true) > 0 ? "GEAR_HighQualityTools" : "GEAR_SimpleTools";
 			GearItem gi = GameManager.GetInventoryComponent().GetLowestConditionGearThatMatchesName(toolUsed);
 			gi.DegradeOnUse();
 
 			//Get required restore materials/amounts and remove them from players inventory.
-			GearItem[] requiredMaterials = RMUtils.LookupRequiredRestoreGear(RMUtils.restoreItem);
-			int[] numRequiredMaterials = RMUtils.LookupRequiredRestoreGearAmounts(RMUtils.restoreItem);
+			GearItem[] requiredMaterials = FMUtils.LookupRequiredRestoreGear(FMUtils.restoreItem);
+			int[] numRequiredMaterials = FMUtils.LookupRequiredRestoreGearAmounts(FMUtils.restoreItem);
 			for (int i = 0; i < requiredMaterials.Length; i++)
 			{
 				GameManager.GetInventoryComponent().RemoveGearFromInventory(requiredMaterials[i].name, numRequiredMaterials[i]);
@@ -87,13 +88,13 @@ namespace RuinedMending
 			//If repair was successful, restore item.
 			if (success)
 			{
-				RMUtils.restoreItem.SetNormalizedHP((Settings.options.restoredItemCondition / 100) - 0.01f, true);
-				RMUtils.restoreItem.ForceNotWornOut();
+				FMUtils.restoreItem.SetNormalizedHP(100, true);
+				FMUtils.restoreItem.ForceNotWornOut();
 			}
 			else
 			{
 				GameAudioManager.PlaySound(GameAudioManager.Instance.m_ErrorAudio, GameManager.m_PlayerObject);
-				UpdateHintLabel($"Restoring Failed. {(GameManager.GetSkillClothingRepair().GetBaseChanceSuccess() + 20 - Settings.options.restoreFailureDebuff).ToString("0.##")}% chance of success.");
+				UpdateHintLabel($"Restoring Failed. {(50 + 20 - Settings.options.restoreFailureDebuff + (FMUtils.IsUsingSimpleTools() ? 0 : 20)).ToString("0.##")}% chance of success.");
 			}
 		}
 
@@ -124,7 +125,7 @@ namespace RuinedMending
 
 			if (enabled)
 			{
-				var coroutine = new RMUtils.LabelCoroutine();
+				var coroutine = new FMUtils.LabelCoroutine();
 
 				MelonCoroutines.Start(coroutine.DisplayHintLabel(5f));
 			}
